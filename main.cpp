@@ -6,7 +6,7 @@
     N_length: length (in particle number) of distribution
     d: distance between particles
     v0: initial speed of large particle
-    D: initial distance of large particle from distribution (negative is inside)
+    D: initial distance of large particle from distribution (positive is inside)
     T: integration time
     N: integration steps
     file: where to store results
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
     std::vector<vec> velocities(N+1, vec(3*(N_particles+1), 0));
 
     auto& pos_init = positions[0];
-    pos_init[2] = -d0;
+    pos_init[2] = d0;
     double x_min = -distance/2 - (N_width-1) * distance;
     double y_min = x_min;
     for (unsigned k = 0; k < N_length; k++) {
