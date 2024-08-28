@@ -70,8 +70,8 @@ struct solver {
             if (i % print_interval == 0) {
                 std::cout << "\rt = " << i*_step << std::flush;
             }
-            vec& pos = _positions[i];
-            vec& vel = _velocities[i];
+            const vec& pos = _positions[i];
+            const vec& vel = _velocities[i];
 
             vec k1x = vel;
             multiply(k1x, _step/2);
@@ -106,8 +106,8 @@ struct solver {
             multiply(k1v, 1.0/3);
             multiply(k2x, 2.0/3);
             multiply(k2v, 2.0/3);
-            multiply(k3x, 2.0/3);
-            multiply(k3v, 2.0/3);
+            multiply(k3x, 1.0/3);
+            multiply(k3v, 1.0/3);
             multiply(k4x, 1.0/6);
             multiply(k4v, 1.0/6);
             add_to_first(k3x, k4x);
@@ -121,6 +121,14 @@ struct solver {
             _velocities[i+1] = vel;
             add_to_first(_positions[i+1], k1x);
             add_to_first(_velocities[i+1], k1v);
+            /* _positions[i+1] = pos;
+            _velocities[i+1] = vel;
+            vec dx = vel;
+            multiply(dx, _step);
+            vec dv = calc_accelerations(pos);
+            multiply(dv, _step);
+            add_to_first(_positions[i+1], dx);
+            add_to_first(_velocities[i+1], dv); */
         }
         std::cout << "\n";
     }
