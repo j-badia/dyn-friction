@@ -4,7 +4,7 @@
 		{
 			"type": "cppbuild",
 			"label": "C/C++: gcc.exe build",
-			"command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe",
+			"command": "g++.exe",
 			"args": [
 				"-fdiagnostics-color=always",
 				"-Wall",

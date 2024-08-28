@@ -13,12 +13,13 @@
 */
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <array>
 #include <cmath>
 
-const double G = 6.67e-11;
+const double G = 4.3e-3; // In pc (km/s)^2 / M_sun
 using vec = std::vector<double>;
 
 
@@ -147,22 +148,36 @@ int main(int argc, char* argv[]) {
     std::vector<vec> velocities(N+1, vec(3*(N_particles+1), 0));
 
     auto& pos_init = positions[0];
-    pos_init[0] = -d0;
-    double x_min = -distance/2 - N_width * distance;
+    pos_init[2] = -d0;
+    double x_min = -distance/2 - (N_width-1) * distance;
     double y_min = x_min;
     for (unsigned k = 0; k < N_length; k++) {
         for (unsigned i = 0; i < 2*N_width; i++) {
             for (unsigned j = 0; j < 2*N_width; j++) {
-                pos_init[3+i+j+k] = x_min + i*distance;
-                pos_init[3+i+j+k+1] = y_min + j*distance;
-                pos_init[3+i+j+k+2] = k*distance;
+                pos_init[3 + 3*(i + 2*N_width*j + 2*N_width*2*N_width*k)] = x_min + i*distance;
+                pos_init[3 + 3*(i + 2*N_width*j + 2*N_width*2*N_width*k) + 1] = y_min + j*distance;
+                pos_init[3 + 3*(i + 2*N_width*j + 2*N_width*2*N_width*k) + 2] = k*distance;
             }
         }
     }
-    velocities[0][0] = v0;
+    velocities[0][2] = v0;
 
     solver Solver {M, m, T/N, N, positions, velocities, vec(3*(N_particles+1), 0)};
     Solver.solve();
+
+    std::ofstream file;
+    file.open(filename);
+    for (unsigned i = 0; i < positions.size(); i++) {
+        file << i*T/N;
+        for (int j : {0, 1, 2}) {
+            file << " " << positions[i][j];
+        }
+        for (int j : {0, 1, 2}) {
+            file << " " << velocities[i][j];
+        }
+        file << "\n";
+    }
+    file.close();
 
     return 0;
 }
