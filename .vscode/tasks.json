@@ -9,6 +9,7 @@
 				"-fdiagnostics-color=always",
 				"-Wall",
 				"-g",
+				"-O3",
 				"main.cpp",
 				"-o",
 				"${workspaceFolder}\\main.exe"
