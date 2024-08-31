@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/main.exe",
-            "args": ["10", "1", "0", "400", "1", "10", "100", "20", "100", "output.txt"],
+            //"args": ["10", "1", "0", "400", "1", "10", "100", "20", "100", "output.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
