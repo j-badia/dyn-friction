@@ -120,35 +120,12 @@ struct solver {
             k4v = calc_accelerations(k4v);
             multiply(k4v, _step);
 
-
-
-            multiply(k1x, 1.0/3);
-            multiply(k1v, 1.0/3);
-            multiply(k2x, 2.0/3);
-            multiply(k2v, 2.0/3);
-            multiply(k3x, 1.0/3);
-            multiply(k3v, 1.0/3);
-            multiply(k4x, 1.0/6);
-            multiply(k4v, 1.0/6);
-            add_to_first(k3x, k4x);
-            add_to_first(k3v, k4v);
-            add_to_first(k2x, k3x);
-            add_to_first(k2v, k3v);
-            add_to_first(k1x, k2x);
-            add_to_first(k1v, k2v);
-
             _positions[i+1] = pos;
             _velocities[i+1] = vel;
-            add_to_first(_positions[i+1], k1x);
-            add_to_first(_velocities[i+1], k1v);
-            /* _positions[i+1] = pos;
-            _velocities[i+1] = vel;
-            vec dx = vel;
-            multiply(dx, _step);
-            vec dv = calc_accelerations(pos);
-            multiply(dv, _step);
-            add_to_first(_positions[i+1], dx);
-            add_to_first(_velocities[i+1], dv); */
+            for (unsigned j = 0; j < pos.size(); j++) {
+                _positions[i+1][j] += k1x[j]/3 + 2*k2x[j]/3 + k3x[j]/3 + k4x[j]/6;
+                _velocities[i+1][j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
+            }
         }
         std::cout << "\n";
     }
