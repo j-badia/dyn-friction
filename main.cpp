@@ -45,7 +45,9 @@ struct solver {
                 positions[3*i+1] - positions[1],
                 positions[3*i+2] - positions[2]
             };
-            double inv_d3 = G / std::pow(std::sqrt(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2]), 3);
+            double d2 = pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2];
+            double inv_d3 = G / std::sqrt(d2*d2*d2);
+            //double inv_d3 = G / std::pow(std::sqrt(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2]), 3);
             //double inv_d3 = G * std::pow(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2], -1.5);
             for (int j : {0, 1, 2}) {
                 accels[j] += _m * inv_d3 * pos_rel[j];
