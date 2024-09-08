@@ -26,6 +26,12 @@ using vec = std::vector<double>;
 
 
 struct solver {
+    /*
+    Arrays needed:
+    All positions and velocities for the current step: sizes 3*(N_small_particles+1) for both. Will be managed by the class so N_small_particles needs to be a parameter
+    All positions and velocities for the next step
+    Positions and velocities for the big particle: sizes 3*N_steps for both. Caller must allocate, passed by reference.
+    */
     double _M;
     double _m;
     double _step;
