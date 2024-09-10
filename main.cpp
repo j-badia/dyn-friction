@@ -62,8 +62,6 @@ class Solver {
             };
             double d2 = pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2];
             double inv_d3 = G / std::sqrt(d2*d2*d2);
-            //double inv_d3 = G / std::pow(std::sqrt(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2]), 3);
-            //double inv_d3 = G * std::pow(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2], -1.5);
             for (int j : {0, 1, 2}) {
                 accels[j] += m * inv_d3 * pos_rel[j];
                 accels[3*i+j] -= M * inv_d3 * pos_rel[j];
@@ -207,7 +205,7 @@ int main(int argc, char* argv[]) {
                 T = std::stod(value);
             } else if (name == "N") {
                 N = std::stoi(value);
-            } else if (name == "filename") {
+            } else if (name == "file") {
                 filename = value;
             }
         }
@@ -247,10 +245,8 @@ int main(int argc, char* argv[]) {
     vec vel_init(3*(N_small+1), 0);
     vel_init[2] = v0;
 
-    vec3 big_positions;
-    vec3 big_velocities;
-    big_positions.reserve(N);
-    big_velocities.reserve(N);
+    vec3 big_positions(N, {0, 0, 0});
+    vec3 big_velocities(N, {0, 0, 0});
 
     Solver solver {M, m, T/N, N_small, N, pos_init, vel_init, big_positions, big_velocities};
 
