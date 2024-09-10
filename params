@@ -1,10 +1,10 @@
 M=5
-m=5
+m=1
 Nw=5
 Nl=1000
 D=1
 v0=10
 d0=400
 T=10
-N=200
+N=100
 file=output.txt

@@ -136,7 +136,7 @@ class Solver {
             multiply(k2v, step/2);
 
             vec k3x = curr_velocities;
-            add_to_first_then_mult(k2x, k2v, step);
+            add_to_first_then_mult(k3x, k2v, step);
             vec k3v = curr_positions;
             add_to_first(k3v, k2x);
             calc_accelerations(k3v);
@@ -257,13 +257,20 @@ int main(int argc, char* argv[]) {
 
     std::ofstream file;
     file.open(filename);
+    file.precision(4);
+    file << std::left;
     for (unsigned i = 0; i < N; i++) {
+        file.width(5);
         file << i*T/N;
         for (int j : {0, 1, 2}) {
-            file << " " << big_positions[i][j];
+            file.width(14);
+            file << big_positions[i][j];
         }
         for (int j : {0, 1, 2}) {
-            file << " " << big_velocities[i][j];
+            if (j < 2) {
+                file.width(14);
+            }
+            file << big_velocities[i][j];
         }
         file << "\n";
     }
