@@ -4,9 +4,9 @@
     m: small particle mass
     N_width: width (in particle number) of distribution
     N_length: length (in particle number) of distribution
-    d: distance between particles
+    D: distance between particles
     v0: initial speed of large particle
-    D: initial distance of large particle from distribution (positive is inside)
+    d0: initial distance of large particle from distribution (positive is inside)
     T: integration time
     N: integration steps
     file: where to store results
@@ -23,29 +23,38 @@
 const std::string default_params_file {"params"};
 const double G = 4.3e-3; // In pc (km/s)^2 / M_sun
 using vec = std::vector<double>;
+using vec3 = std::vector<std::array<double, 3>>;
 
 
-struct solver {
+class Solver {
     /*
     Arrays needed:
     All positions and velocities for the current step: sizes 3*(N_small_particles+1) for both. Will be managed by the class so N_small_particles needs to be a parameter
     All positions and velocities for the next step
-    Positions and velocities for the big particle: sizes 3*N_steps for both. Caller must allocate, passed by reference.
+    Positions and velocities for the big particle: sizes (N_steps x 3) for both. Caller must allocate, passed by reference.
     */
-    double _M;
-    double _m;
-    double _step;
-    unsigned _N_steps;
-    std::vector<vec>& _positions;
-    std::vector<vec>& _velocities;
+    private:
+
+    double M;
+    double m;
+    double step;
+    unsigned N_small;
+    unsigned N_steps;
+    
+    vec curr_positions;
+    vec curr_velocities;
+    vec next_positions;
+    vec next_velocities;
     vec accels;
+
+    vec3& big_positions;
+    vec3& big_velocities;
     
     // positions has size 3*(N_particles + 1)
     // positions = [x1, y1, z1, x2, y2, z2, ...]
-    vec calc_accelerations(const vec& positions) {
-        vec accels(positions.size(), 0);
-        std::size_t N_parts = positions.size()/3;
-        for (std::size_t i = 1; i < N_parts; i++) {
+    void calc_accelerations(const vec& positions) {
+        accels.assign(accels.size(), 0);
+        for (unsigned i = 1; i < N_small+1; i++) {
             std::array<double, 3> pos_rel {
                 positions[3*i] - positions[0],
                 positions[3*i+1] - positions[1],
@@ -56,11 +65,10 @@ struct solver {
             //double inv_d3 = G / std::pow(std::sqrt(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2]), 3);
             //double inv_d3 = G * std::pow(pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2], -1.5);
             for (int j : {0, 1, 2}) {
-                accels[j] += _m * inv_d3 * pos_rel[j];
-                accels[3*i+j] -= _M * inv_d3 * pos_rel[j];
+                accels[j] += m * inv_d3 * pos_rel[j];
+                accels[3*i+j] -= M * inv_d3 * pos_rel[j];
             }
         }
-        return accels;
     }
 
     void multiply(vec& v, double a) {
@@ -91,47 +99,74 @@ struct solver {
         }
     }
 
+    public:
+
+    Solver(double _M, double _m, double _step, unsigned _N_small, unsigned _N_steps, const vec& init_pos, const vec& init_vel, vec3& _big_pos, vec3& _big_vel)
+        : M{_M}, m{_m}, step{_step}, N_small{_N_small}, N_steps{_N_steps}, big_positions{_big_pos}, big_velocities{_big_vel}
+    {
+        accels.assign(3*(N_small+1), 0);
+        curr_positions = init_pos;
+        curr_velocities = init_vel;
+        next_positions.reserve(3*(N_small+1));
+        next_velocities.reserve(3*(N_small+1));
+
+        for (int i : {0, 1, 2}) {
+            big_positions[0][i] = init_pos[i];
+            big_velocities[0][i] = init_vel[i];
+        }
+    }
+
     void solve() {
-        for (unsigned i = 0; i < _positions.size()-1; i++) {
-            static unsigned print_interval = (unsigned) _positions.size()/100;
+        unsigned print_interval = (unsigned) N_steps/100;
+        for (unsigned i = 1; i < N_steps; i++) {
             if (i % print_interval == 0) {
-                std::cout << "\rt = " << i*_step << std::flush;
+                std::cout << "\rt = " << i*step << std::flush;
             }
-            const vec& pos = _positions[i];
-            const vec& vel = _velocities[i];
 
-            vec k1x = vel;
-            multiply(k1x, _step/2);
-            vec k1v = calc_accelerations(pos); // Should use move semantics
-            multiply(k1v, _step/2);
+            vec k1x = curr_velocities;
+            multiply(k1x, step/2);
+            calc_accelerations(curr_positions);
+            vec k1v = accels;
+            multiply(k1v, step/2);
             
-            vec k2x = vel;
-            add_to_first_then_mult(k2x, k1v, _step/2);
-            vec k2v = pos;
+            vec k2x = curr_velocities;
+            add_to_first_then_mult(k2x, k1v, step/2);
+            vec k2v = curr_positions;
             add_to_first(k2v, k1x);
-            k2v = calc_accelerations(k2v);
-            multiply(k2v, _step/2);
+            calc_accelerations(k2v);
+            k2v = accels;
+            multiply(k2v, step/2);
 
-            vec k3x = vel;
-            add_to_first_then_mult(k2x, k2v, _step);
-            vec k3v = pos;
+            vec k3x = curr_velocities;
+            add_to_first_then_mult(k2x, k2v, step);
+            vec k3v = curr_positions;
             add_to_first(k3v, k2x);
-            k3v = calc_accelerations(k3v);
-            multiply(k3v, _step);
+            calc_accelerations(k3v);
+            k3v = accels;
+            multiply(k3v, step);
 
-            vec k4x = vel;
-            add_to_first_then_mult(k4x, k3v, _step);
-            vec k4v = pos;
+            vec k4x = curr_velocities;
+            add_to_first_then_mult(k4x, k3v, step);
+            vec k4v = curr_positions;
             add_to_first(k4v, k3x);
-            k4v = calc_accelerations(k4v);
-            multiply(k4v, _step);
+            calc_accelerations(k4v);
+            k4v = accels;
+            multiply(k4v, step);
 
-            _positions[i+1] = pos;
-            _velocities[i+1] = vel;
-            for (unsigned j = 0; j < pos.size(); j++) {
-                _positions[i+1][j] += k1x[j]/3 + 2*k2x[j]/3 + k3x[j]/3 + k4x[j]/6;
-                _velocities[i+1][j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
+            next_positions = curr_positions;
+            next_velocities = curr_velocities;
+            for (unsigned j = 0; j < next_positions.size(); j++) {
+                next_positions[j] += k1x[j]/3 + 2*k2x[j]/3 + k3x[j]/3 + k4x[j]/6;
+                next_velocities[j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
             }
+
+            for (int j : {0, 1, 2}) {
+                big_positions[i][j] = next_positions[j];
+                big_velocities[i][j] = next_velocities[j];
+            }
+
+            std::swap(curr_positions, next_positions);
+            std::swap(curr_velocities, next_velocities);
         }
         std::cout << "\n";
     }
@@ -192,11 +227,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }    
 
-    unsigned N_particles = 2*N_width * 2*N_width * N_length;
-    std::vector<vec> positions(N+1, vec(3*(N_particles+1), 0));
-    std::vector<vec> velocities(N+1, vec(3*(N_particles+1), 0));
+    unsigned N_small = 2*N_width * 2*N_width * N_length;
 
-    auto& pos_init = positions[0];
+    vec pos_init;
+    pos_init.assign(3*(N_small+1), 0);
     pos_init[2] = d0;
     double x_min = -distance/2 - (N_width-1) * distance;
     double y_min = x_min;
@@ -209,24 +243,31 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    velocities[0][2] = v0;
 
-    solver Solver {M, m, T/N, N, positions, velocities, vec(3*(N_particles+1), 0)};
+    vec vel_init(3*(N_small+1), 0);
+    vel_init[2] = v0;
+
+    vec3 big_positions;
+    vec3 big_velocities;
+    big_positions.reserve(N);
+    big_velocities.reserve(N);
+
+    Solver solver {M, m, T/N, N_small, N, pos_init, vel_init, big_positions, big_velocities};
 
     auto t0 = std::chrono::steady_clock::now();
-    Solver.solve();
+    solver.solve();
     auto t1 = std::chrono::steady_clock::now();
     std::cout << "Time: " << std::chrono::duration<double>{t1-t0}.count() << "s" << std::endl;
 
     std::ofstream file;
     file.open(filename);
-    for (unsigned i = 0; i < positions.size(); i++) {
+    for (unsigned i = 0; i < N; i++) {
         file << i*T/N;
         for (int j : {0, 1, 2}) {
-            file << " " << positions[i][j];
+            file << " " << big_positions[i][j];
         }
         for (int j : {0, 1, 2}) {
-            file << " " << velocities[i][j];
+            file << " " << big_velocities[i][j];
         }
         file << "\n";
     }
