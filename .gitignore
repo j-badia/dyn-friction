@@ -1,5 +1,6 @@
 /main.exe
 gmon.out
 prof.txt
+prof2.txt
 *.s
 *.exe
