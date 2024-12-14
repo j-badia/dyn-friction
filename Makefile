@@ -3,10 +3,10 @@ CC=g++
 all: opt dbg
 
 opt:
-	$(CC) main.cpp -O3 -o df.exe
+	$(CC) main.cpp solver.cpp -O3 -o df.exe
 
 dbg:
-	$(CC) main.cpp -g -o df_dbg.exe
+	$(CC) main.cpp solver.cpp -g -o df_dbg.exe
 
 asm:
 	$(CC) main.cpp -S -fverbose-asm -o main.s
