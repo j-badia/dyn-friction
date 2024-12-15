@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <array>
 #include <vector>
@@ -16,23 +17,24 @@ class Solver {
     private:
 
     constexpr static double G = 4.3e-3; // In pc (km/s)^2 / M_sun
-    double M;
-    double m;
-    double step;
-    unsigned N_small;
-    unsigned N_steps;
+    double M; // Mass of big particle
+    double m; // Mass of small particles
+    double step; // Time step size
+    unsigned N_small; // Number of small particles
+    unsigned curr_step {0};
     
+    //These vectors hold the position and velocities of all the particles. The big mass comes first, so the size is 3*(N_small+1).
     vec curr_positions;
     vec curr_velocities;
     vec next_positions;
     vec next_velocities;
     vec accels;
 
+    // These Nx3 vectors hold the data for the big particle. The caller must preallocate but doesn't need to put the initial values in.
     vec3& big_positions;
     vec3& big_velocities;
     
-    // positions has size 3*(N_particles + 1)
-    // positions = [x1, y1, z1, x2, y2, z2, ...]
+    // Will calculate the accelerations by taking into account only the forces between the first particle (with mass M) and all the others (with mass m), and store them in accels.
     void calc_accelerations(const vec& positions);
     void multiply(vec& v, double a);
     void add_to_first(vec& v1, const vec& v2);
@@ -41,6 +43,8 @@ class Solver {
 
     public:
 
-    Solver(double _M, double _m, double _step, unsigned _N_small, unsigned _N_steps, const vec& init_pos, const vec& init_vel, vec3& _big_pos, vec3& _big_vel);
-    void solve();
+    // init_pos is 3(N_small+1), big mass first
+    Solver(double _M, double _m, double _step, const vec& init_pos, const vec& init_vel, vec3& _big_pos, vec3& _big_vel);
+    void solve(unsigned N_steps);
+    void next_step();
 };

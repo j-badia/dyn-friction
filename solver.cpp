@@ -45,9 +45,11 @@ void Solver::mult_then_add_to_first(vec& v1, const vec& v2, const double a) {
     }
 }
 
-Solver::Solver(double _M, double _m, double _step, unsigned _N_small, unsigned _N_steps, const vec& init_pos, const vec& init_vel, vec3& _big_pos, vec3& _big_vel)
-    : M{_M}, m{_m}, step{_step}, N_small{_N_small}, N_steps{_N_steps}, big_positions{_big_pos}, big_velocities{_big_vel}
+Solver::Solver(double _M, double _m, double _step, const vec& init_pos, const vec& init_vel, vec3& _big_pos, vec3& _big_vel)
+    : M{_M}, m{_m}, step{_step}, big_positions{_big_pos}, big_velocities{_big_vel}
 {
+    assert(init_pos.size() == init_vel.size());
+    N_small = init_pos.size();
     accels.assign(3*(N_small+1), 0);
     curr_positions = init_pos;
     curr_velocities = init_vel;
@@ -60,57 +62,61 @@ Solver::Solver(double _M, double _m, double _step, unsigned _N_small, unsigned _
     }
 }
 
-void Solver::solve() {
+void Solver::next_step() {
+    vec k1x = curr_velocities;
+    multiply(k1x, step/2);
+    calc_accelerations(curr_positions);
+    vec k1v = accels;
+    multiply(k1v, step/2);
+    
+    vec k2x = curr_velocities;
+    add_to_first_then_mult(k2x, k1v, step/2);
+    vec k2v = curr_positions;
+    add_to_first(k2v, k1x);
+    calc_accelerations(k2v);
+    k2v = accels;
+    multiply(k2v, step/2);
+
+    vec k3x = curr_velocities;
+    add_to_first_then_mult(k3x, k2v, step);
+    vec k3v = curr_positions;
+    add_to_first(k3v, k2x);
+    calc_accelerations(k3v);
+    k3v = accels;
+    multiply(k3v, step);
+
+    vec k4x = curr_velocities;
+    add_to_first_then_mult(k4x, k3v, step);
+    vec k4v = curr_positions;
+    add_to_first(k4v, k3x);
+    calc_accelerations(k4v);
+    k4v = accels;
+    multiply(k4v, step);
+
+    next_positions = curr_positions;
+    next_velocities = curr_velocities;
+    for (unsigned j = 0; j < next_positions.size(); j++) {
+        next_positions[j] += k1x[j]/3 + 2*k2x[j]/3 + k3x[j]/3 + k4x[j]/6;
+        next_velocities[j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
+    }
+
+    for (int j : {0, 1, 2}) {
+        big_positions[curr_step][j] = next_positions[j];
+        big_velocities[curr_step][j] = next_velocities[j];
+    }
+
+    std::swap(curr_positions, next_positions);
+    std::swap(curr_velocities, next_velocities);
+    curr_step++;
+}
+
+void Solver::solve(unsigned N_steps) {
     unsigned print_interval = (unsigned) N_steps/100;
     for (unsigned i = 1; i < N_steps; i++) {
         if (i % print_interval == 0) {
             std::cout << "\rt = " << i*step << std::flush;
         }
-
-        vec k1x = curr_velocities;
-        multiply(k1x, step/2);
-        calc_accelerations(curr_positions);
-        vec k1v = accels;
-        multiply(k1v, step/2);
-        
-        vec k2x = curr_velocities;
-        add_to_first_then_mult(k2x, k1v, step/2);
-        vec k2v = curr_positions;
-        add_to_first(k2v, k1x);
-        calc_accelerations(k2v);
-        k2v = accels;
-        multiply(k2v, step/2);
-
-        vec k3x = curr_velocities;
-        add_to_first_then_mult(k3x, k2v, step);
-        vec k3v = curr_positions;
-        add_to_first(k3v, k2x);
-        calc_accelerations(k3v);
-        k3v = accels;
-        multiply(k3v, step);
-
-        vec k4x = curr_velocities;
-        add_to_first_then_mult(k4x, k3v, step);
-        vec k4v = curr_positions;
-        add_to_first(k4v, k3x);
-        calc_accelerations(k4v);
-        k4v = accels;
-        multiply(k4v, step);
-
-        next_positions = curr_positions;
-        next_velocities = curr_velocities;
-        for (unsigned j = 0; j < next_positions.size(); j++) {
-            next_positions[j] += k1x[j]/3 + 2*k2x[j]/3 + k3x[j]/3 + k4x[j]/6;
-            next_velocities[j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
-        }
-
-        for (int j : {0, 1, 2}) {
-            big_positions[i][j] = next_positions[j];
-            big_velocities[i][j] = next_velocities[j];
-        }
-
-        std::swap(curr_positions, next_positions);
-        std::swap(curr_velocities, next_velocities);
+        next_step();
     }
     std::cout << "\n";
 }

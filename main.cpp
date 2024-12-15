@@ -15,16 +15,33 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include <chrono>
 
 #include "solver.hpp"
 
 const std::string default_params_file {"params"};
 
+using smap = std::map<std::string, std::string>;
+
+smap read_config(std::string fname) {
+    smap map;
+    std::ifstream file;
+    file.open(fname);
+    std::string name, value;
+    while (file.peek() != EOF) {
+        std::getline(file, name, '=');
+        std::getline(file, value);
+        map[name] = value;
+    }
+    return map;
+}
+
 int main(int argc, char* argv[]) {
     double M, m, distance, v0, d0, T;
     unsigned N_width, N_length, N;
     std::string filename;
+    smap config;
     if (argc == 1 || argc == 2) {
         std::string params_file;
         if (argc == 1) {
@@ -32,6 +49,7 @@ int main(int argc, char* argv[]) {
         } else if (argc == 2) {
             params_file = argv[1];
         }
+        config = read_config(params_file);
         std::ifstream file;
         file.open(params_file);
         std::string name, value;
@@ -74,7 +92,7 @@ int main(int argc, char* argv[]) {
     } else {
         std::cout << "Received " << argc-1 << " arguments." << "\n";
         return 1;
-    }    
+    }
 
     unsigned N_small = 2*N_width * 2*N_width * N_length;
 
@@ -99,10 +117,10 @@ int main(int argc, char* argv[]) {
     vec3 big_positions(N, {0, 0, 0});
     vec3 big_velocities(N, {0, 0, 0});
 
-    Solver solver {M, m, T/N, N_small, N, pos_init, vel_init, big_positions, big_velocities};
+    Solver solver {M, m, T/N, pos_init, vel_init, big_positions, big_velocities};
 
     auto t0 = std::chrono::steady_clock::now();
-    solver.solve();
+    solver.solve(N);
     auto t1 = std::chrono::steady_clock::now();
     std::cout << "Time: " << std::chrono::duration<double>{t1-t0}.count() << "s" << std::endl;
 
