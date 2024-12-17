@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <map>
 #include <chrono>
 
@@ -25,19 +26,88 @@ const std::string default_params_file {"params"};
 using smap = std::map<std::string, std::string>;
 
 smap read_config(std::string fname) {
-    smap map;
+    smap config;
     std::ifstream file;
     file.open(fname);
     std::string name, value;
     while (file.peek() != EOF) {
         std::getline(file, name, '=');
         std::getline(file, value);
-        map[name] = value;
+        config[name] = value;
     }
-    return map;
+    return config;
 }
 
+/*
+ *  Reads a file consisting of two lines of single space separated numbers, and
+ *  converts them into two vectors.
+ */
+std::pair<vec, vec> read_initial(std::string fname) {
+    std::ifstream file;
+    file.open(fname);
+    std::string pos_s, vel_s;
+    std::getline(file, pos_s);
+    std::getline(file, vel_s);
+    file.close();
+
+    vec pos, vel;
+    std::stringstream ss {pos_s};
+    std::string elem;
+    while (std::getline(ss, elem, ' ')) {
+        pos.emplace_back(std::stod(elem));
+    }
+    ss = std::stringstream(vel_s);
+    while (std::getline(ss, elem, ' ')) {
+        vel.emplace_back(std::stod(elem));
+    }
+    
+    return std::make_pair(pos, vel);
+}
+
+/*
+args file:
+initial: initial conditions file, two lines: one for position and one for velocity
+output: output file to store trajectory of big mass
+M: big mass
+m: small mass
+T: integration time interval
+dt: integration time step
+*/
 int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cout << "Usage: df.exe args-file\n";
+        return 1;
+    }
+    smap config = read_config(argv[1]);
+    for (const std::string& key : {"initial", "output", "M", "m", "T", "dt"}) {
+        if (config.count(key) == 0) {
+            std::cout << "Missing element " << key << " in args.\n";
+            return 1;
+        }
+    }
+
+    double M, m, T, dt;
+    M = std::stod(config["M"]);
+    m = std::stod(config["m"]);
+    T = std::stod(config["T"]);
+    dt = std::stod(config["dt"]);
+    
+    auto [init_pos, init_vel] = read_initial(config["initial"]);
+    unsigned N_small = init_pos.size();
+    if (N_small != init_vel.size()) {
+        std::cout << "Initial position and velocity have different lengths.\n";
+        return 1;
+    }
+
+    unsigned N_steps = (unsigned) (T/dt);
+    vec3 big_pos(N_steps+1, {0, 0, 0});
+    vec3 big_vel(N_steps+1, {0, 0, 0});
+    Solver solver {M, m, dt, init_pos, init_vel, big_pos, big_vel};
+
+    return 0;
+}
+
+int _main(int argc, char* argv[]) {
     double M, m, distance, v0, d0, T;
     unsigned N_width, N_length, N;
     std::string filename;
