@@ -1,4 +1,10 @@
 /*
+    Units:
+    distance in parsecs
+    velocity in km/s
+    time in pc/(km/s) = 978,462 yr
+    mass in solar masses
+
     Args:
     M: large particle mass
     m: small particle mass
