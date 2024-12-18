@@ -49,6 +49,7 @@ Solver::Solver(double _M, double _m, double _step, const vec& init_pos, const ve
     : M{_M}, m{_m}, step{_step}, big_positions{_big_pos}, big_velocities{_big_vel}
 {
     assert(init_pos.size() == init_vel.size());
+    //assert(big_positions.size() == big_velocities.size()); Is this correct if they're reserved but not initialized?
     N_small = init_pos.size();
     accels.assign(3*(N_small+1), 0);
     curr_positions = init_pos;
@@ -100,6 +101,7 @@ void Solver::next_step() {
         next_velocities[j] += k1v[j]/3 + 2*k2v[j]/3 + k3v[j]/3 + k4v[j]/6;
     }
 
+    curr_step++;
     for (int j : {0, 1, 2}) {
         big_positions[curr_step][j] = next_positions[j];
         big_velocities[curr_step][j] = next_velocities[j];
@@ -107,7 +109,6 @@ void Solver::next_step() {
 
     std::swap(curr_positions, next_positions);
     std::swap(curr_velocities, next_velocities);
-    curr_step++;
 }
 
 void Solver::solve(unsigned N_steps) {

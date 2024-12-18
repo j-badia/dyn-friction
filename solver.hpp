@@ -30,7 +30,7 @@ class Solver {
     vec next_velocities;
     vec accels;
 
-    // These Nx3 vectors hold the data for the big particle. The caller must preallocate but doesn't need to put the initial values in.
+    // These (N_steps+1)x3 vectors hold the data for the big particle. The caller must preallocate but doesn't need to put the initial values in.
     vec3& big_positions;
     vec3& big_velocities;
     

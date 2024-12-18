@@ -104,10 +104,45 @@ int main(int argc, char* argv[]) {
     vec3 big_vel(N_steps+1, {0, 0, 0});
     Solver solver {M, m, dt, init_pos, init_vel, big_pos, big_vel};
 
+    auto t0 = std::chrono::steady_clock::now();
+
+    unsigned print_interval = N_steps/100;
+    for (unsigned i = 1; i < N_steps+1; i++) {
+        if (i % print_interval == 0) {
+            std::cout << "\rt = " << i*dt << std::flush;
+        }
+        solver.next_step();
+    }
+    std::cout << "\n";
+
+    auto t1 = std::chrono::steady_clock::now();
+    std::cout << "Time: " << std::chrono::duration<double>{t1-t0}.count() << "s" << std::endl;
+
+    std::ofstream file;
+    file.open(config["output"]);
+    file.precision(4);
+    file << std::left;
+    for (unsigned i = 0; i < N_steps+1; i++) {
+        file.width(5);
+        file << i*dt;
+        for (int j : {0, 1, 2}) {
+            file.width(14);
+            file << big_pos[i][j];
+        }
+        for (int j : {0, 1, 2}) {
+            if (j < 2) {
+                file.width(14);
+            }
+            file << big_vel[i][j];
+        }
+        file << "\n";
+    }
+    file.close();
+
     return 0;
 }
 
-int _main(int argc, char* argv[]) {
+int old_main(int argc, char* argv[]) {
     double M, m, distance, v0, d0, T;
     unsigned N_width, N_length, N;
     std::string filename;
