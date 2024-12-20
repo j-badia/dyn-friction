@@ -31,6 +31,9 @@ const std::string default_params_file {"params"};
 
 using smap = std::map<std::string, std::string>;
 
+/*
+ * Reads a file with name=value pairs into a map. Lines starting with # are ignored
+ */
 smap read_config(std::string fname) {
     smap config;
     std::ifstream file;
