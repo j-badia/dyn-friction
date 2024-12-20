@@ -37,6 +37,10 @@ smap read_config(std::string fname) {
     file.open(fname);
     std::string name, value;
     while (file.peek() != EOF) {
+        if (file.peek() == '#') {
+            file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
         std::getline(file, name, '=');
         std::getline(file, value);
         config[name] = value;
