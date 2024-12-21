@@ -50,7 +50,7 @@ Solver::Solver(double _M, double _m, double _step, const vec& init_pos, const ve
 {
     assert(init_pos.size() == init_vel.size());
     //assert(big_positions.size() == big_velocities.size()); Is this correct if they're reserved but not initialized?
-    N_small = init_pos.size();
+    N_small = init_pos.size()/3 - 1;
     accels.assign(3*(N_small+1), 0);
     curr_positions = init_pos;
     curr_velocities = init_vel;

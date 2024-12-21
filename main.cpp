@@ -87,11 +87,19 @@ T: integration time interval
 dt: integration time step
 */
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    if (argc > 2) {
         std::cout << "Usage: df.exe args-file\n";
         return 1;
     }
-    smap config = read_config(argv[1]);
+    smap config;
+    if (argc == 2) {
+        config = read_config(argv[1]);
+    } else {
+        std::cout << "Enter args file: ";
+        std::string config_fname;
+        std::cin >> config_fname;
+        config = read_config(config_fname);
+    }
     for (const std::string& key : {"initial", "output", "M", "m", "T", "dt"}) {
         if (config.count(key) == 0) {
             std::cout << "Missing element " << key << " in args.\n";
@@ -136,7 +144,7 @@ int main(int argc, char* argv[]) {
     file.precision(4);
     file << std::left;
     for (unsigned i = 0; i < N_steps+1; i++) {
-        file.width(5);
+        file.width(10);
         file << i*dt;
         for (int j : {0, 1, 2}) {
             file.width(14);
