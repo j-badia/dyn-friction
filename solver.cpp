@@ -1,21 +1,21 @@
 #include "solver.hpp"
 
 void Solver::calc_accelerations(const vec& positions) {
-        accels.assign(accels.size(), 0);
-        for (unsigned i = 1; i < N_small+1; i++) {
-            std::array<double, 3> pos_rel {
-                positions[3*i] - positions[0],
-                positions[3*i+1] - positions[1],
-                positions[3*i+2] - positions[2]
-            };
-            double d2 = pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2];
-            double inv_d3 = G / std::sqrt(d2*d2*d2);
-            for (int j : {0, 1, 2}) {
-                accels[j] += m * inv_d3 * pos_rel[j];
-                accels[3*i+j] -= M * inv_d3 * pos_rel[j];
-            }
+    accels.assign(accels.size(), 0);
+    for (unsigned i = 1; i < N_small+1; i++) {
+        std::array<double, 3> pos_rel {
+            positions[3*i] - positions[0],
+            positions[3*i+1] - positions[1],
+            positions[3*i+2] - positions[2]
+        };
+        double d2 = pos_rel[0]*pos_rel[0]+pos_rel[1]*pos_rel[1]+pos_rel[2]*pos_rel[2];
+        double inv_d3 = G / std::sqrt(d2*d2*d2);
+        for (int j : {0, 1, 2}) {
+            accels[j] += m * inv_d3 * pos_rel[j];
+            accels[3*i+j] -= M * inv_d3 * pos_rel[j];
         }
     }
+}
 
 void Solver::multiply(vec& v, double a) {
     for (auto& it : v) {

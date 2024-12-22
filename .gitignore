@@ -4,3 +4,4 @@ prof.txt
 prof2.txt
 *.s
 *.exe
+*.o
