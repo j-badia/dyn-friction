@@ -1,0 +1,9 @@
+initial=init-unif-1.txt
+output=output-unif-1.txt
+M=1
+m=1e-3
+# v^2 = (4pi*G*rho/3) * r^2
+# Gm = 43 pc (km/s)^2
+# with r = 10 pc, v = 2.073, T = 30.3
+T=10000
+dt=0.1
